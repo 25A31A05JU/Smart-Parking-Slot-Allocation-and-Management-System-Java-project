@@ -1,0 +1,15 @@
+
+
+1. Start the program.
+2. Initialize the parking slots and create the vehicle records.
+3. Display the parking management menu.
+4. Accept the vehicle details from the user.
+5. Check for available parking slots.
+6. Allocate an available slot to the vehicle.
+7. Store the vehicle entry details.
+8. When a vehicle exits, retrieve its parking record.
+9. Calculate the parking duration and total parking charges.
+10. Release the occupied parking slot.
+11. Update the parking availability and save the records to a file.
+12. Repeat the process until the user selects Exit.
+13. Stop the program.

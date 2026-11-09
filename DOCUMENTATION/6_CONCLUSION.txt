@@ -1,0 +1,3 @@
+
+
+The Smart Parking Slot Allocation and Management System provides an efficient and automated solution for managing parking facilities. It simplifies vehicle entry and exit, allocates parking slots, maintains records, and calculates parking charges accurately. By implementing Java concepts such as OOP, ArrayList, Queue, exception handling, and file handling, the system reduces manual effort, saves time, and improves parking space utilization.

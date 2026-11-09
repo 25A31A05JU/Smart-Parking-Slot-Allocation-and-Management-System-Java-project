@@ -1,0 +1,5 @@
+
+
+Parking management is an important aspect of crowded areas such as shopping malls, colleges, hospitals, and commercial buildings. Traditional parking systems often rely on manual processes to allocate slots and maintain vehicle records, which can lead to delays and confusion.
+
+The Smart Parking Slot Allocation and Management System is developed using Java to automate parking operations. It allocates available slots to vehicles, records entry and exit details, tracks parking availability, and calculates parking fees based on parking duration. The system uses object-oriented programming concepts and Java collections to ensure efficient data management and smooth parking operations.

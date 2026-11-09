@@ -1,0 +1,12 @@
+
+
+- Develop the application using Java programming.
+- Create classes and objects to manage vehicle details.
+- Use inheritance and encapsulation for structured data management.
+- Use ArrayList to store parking slot information.
+- Implement Queue to manage waiting vehicles.
+- Allocate available parking slots automatically.
+- Record vehicle entry and exit details.
+- Calculate parking charges based on parking duration.
+- Handle errors using exception handling.
+- Store and update parking records using file handling..
