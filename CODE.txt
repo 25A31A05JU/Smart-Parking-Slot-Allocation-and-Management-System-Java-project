@@ -1,0 +1,453 @@
+
+import java.util.*;
+import java.io.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+
+public class Main {
+
+    // Parent Class
+    static abstract class Vehicle {
+        private String vehicleNumber;
+        private LocalDateTime entryTime;
+
+        Vehicle(String vehicleNumber) {
+            this.vehicleNumber = vehicleNumber;
+        }
+
+        public String getVehicleNumber() {
+            return vehicleNumber;
+        }
+
+        public LocalDateTime getEntryTime() {
+            return entryTime;
+        }
+
+        public void setEntryTime(LocalDateTime entryTime) {
+            this.entryTime = entryTime;
+        }
+
+        abstract String getVehicleType();
+
+        abstract double getHourlyRate();
+    }
+
+    // Child Class - Car
+    static class Car extends Vehicle {
+        Car(String number) {
+            super(number);
+        }
+
+        String getVehicleType() {
+            return "Car";
+        }
+
+        double getHourlyRate() {
+            return 30.0;
+        }
+    }
+
+    // Child Class - Bike
+    static class Bike extends Vehicle {
+        Bike(String number) {
+            super(number);
+        }
+
+        String getVehicleType() {
+            return "Bike";
+        }
+
+        double getHourlyRate() {
+            return 15.0;
+        }
+    }
+
+    // Parking Slot Class
+    static class ParkingSlot {
+        private int slotNumber;
+        private Vehicle vehicle;
+
+        ParkingSlot(int slotNumber) {
+            this.slotNumber = slotNumber;
+        }
+
+        public int getSlotNumber() {
+            return slotNumber;
+        }
+
+        public Vehicle getVehicle() {
+            return vehicle;
+        }
+
+        public boolean isAvailable() {
+            return vehicle == null;
+        }
+
+        public void parkVehicle(Vehicle vehicle) {
+            this.vehicle = vehicle;
+        }
+
+        public void removeVehicle() {
+            vehicle = null;
+        }
+    }
+
+    // Parking Management Class
+    static class ParkingSystem {
+
+        private ArrayList<ParkingSlot> slots;
+        private ArrayList<Vehicle> activeVehicles;
+        private Queue<Vehicle> waitingQueue;
+
+        private final int TOTAL_SLOTS = 5;
+        private final String FILE_NAME = "parking_records.txt";
+
+        ParkingSystem() {
+            slots = new ArrayList<>();
+            activeVehicles = new ArrayList<>();
+            waitingQueue = new LinkedList<>();
+
+            for (int i = 1; i <= TOTAL_SLOTS; i++) {
+                slots.add(new ParkingSlot(i));
+            }
+        }
+
+        // Find available slot
+        private ParkingSlot getAvailableSlot() {
+            for (ParkingSlot slot : slots) {
+                if (slot.isAvailable()) {
+                    return slot;
+                }
+            }
+            return null;
+        }
+
+        // Check duplicate vehicle
+        private boolean vehicleExists(String number) {
+            for (Vehicle v : activeVehicles) {
+                if (v.getVehicleNumber().equalsIgnoreCase(number)) {
+                    return true;
+                }
+            }
+
+            for (Vehicle v : waitingQueue) {
+                if (v.getVehicleNumber().equalsIgnoreCase(number)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Save records
+        private void saveRecord(String record) {
+            try (FileWriter writer =
+                    new FileWriter(FILE_NAME, true)) {
+
+                writer.write(record + "\n");
+
+            } catch (IOException e) {
+                System.out.println("Error saving record!");
+            }
+        }
+
+        // Vehicle Entry
+        public void vehicleEntry(Vehicle vehicle) {
+
+            if (vehicleExists(vehicle.getVehicleNumber())) {
+                System.out.println("Vehicle already registered!");
+                return;
+            }
+
+            ParkingSlot slot = getAvailableSlot();
+
+            if (slot == null) {
+                waitingQueue.offer(vehicle);
+
+                System.out.println("Parking is full!");
+                System.out.println("Vehicle added to waiting queue.");
+
+                saveRecord("WAITING: " +
+                        vehicle.getVehicleNumber());
+                return;
+            }
+
+            allocateSlot(vehicle, slot);
+        }
+
+        // Allocate slot
+        private void allocateSlot(Vehicle vehicle,
+                                  ParkingSlot slot) {
+
+            vehicle.setEntryTime(LocalDateTime.now());
+
+            slot.parkVehicle(vehicle);
+            activeVehicles.add(vehicle);
+
+            System.out.println("\nParking Successful!");
+            System.out.println("Vehicle Number: " +
+                    vehicle.getVehicleNumber());
+            System.out.println("Vehicle Type: " +
+                    vehicle.getVehicleType());
+            System.out.println("Allocated Slot: " +
+                    slot.getSlotNumber());
+
+            System.out.println("Entry Time: " +
+                    vehicle.getEntryTime().format(
+                    DateTimeFormatter.ofPattern(
+                    "dd-MM-yyyy HH:mm:ss")));
+
+            saveRecord("ENTRY: " +
+                    vehicle.getVehicleNumber() +
+                    ", Type: " + vehicle.getVehicleType() +
+                    ", Slot: " + slot.getSlotNumber());
+        }
+
+        // Vehicle Exit
+        public void vehicleExit(String number) {
+
+            Vehicle found = null;
+            ParkingSlot occupiedSlot = null;
+
+            for (Vehicle v : activeVehicles) {
+                if (v.getVehicleNumber().equalsIgnoreCase(number)) {
+                    found = v;
+                    break;
+                }
+            }
+
+            if (found == null) {
+                System.out.println("Active vehicle not found!");
+                return;
+            }
+
+            for (ParkingSlot slot : slots) {
+                if (slot.getVehicle() == found) {
+                    occupiedSlot = slot;
+                    break;
+                }
+            }
+
+            LocalDateTime exitTime = LocalDateTime.now();
+
+            long minutes = Duration.between(
+                    found.getEntryTime(), exitTime
+            ).toMinutes();
+
+            long hours = Math.max(1,
+                    (long) Math.ceil(minutes / 60.0));
+
+            double charge = hours * found.getHourlyRate();
+
+            System.out.println("\n--- VEHICLE EXIT DETAILS ---");
+            System.out.println("Vehicle Number: " +
+                    found.getVehicleNumber());
+            System.out.println("Vehicle Type: " +
+                    found.getVehicleType());
+            System.out.println("Parking Duration: " +
+                    minutes + " minutes");
+            System.out.println("Total Hours: " + hours);
+            System.out.println("Parking Charges: Rs. " +
+                    String.format("%.2f", charge));
+
+            saveRecord("EXIT: " +
+                    found.getVehicleNumber() +
+                    ", Duration: " + minutes +
+                    " minutes, Charges: Rs. " + charge);
+
+            activeVehicles.remove(found);
+            occupiedSlot.removeVehicle();
+
+            System.out.println("Parking slot released successfully!");
+
+            processWaitingQueue();
+        }
+
+        // Process waiting queue
+        private void processWaitingQueue() {
+
+            while (!waitingQueue.isEmpty()) {
+
+                ParkingSlot slot = getAvailableSlot();
+
+                if (slot == null) {
+                    break;
+                }
+
+                Vehicle vehicle = waitingQueue.poll();
+
+                System.out.println(
+                        "\nAllocating slot to waiting vehicle...");
+
+                allocateSlot(vehicle, slot);
+            }
+        }
+
+        // Display parking slots
+        public void displaySlots() {
+
+            System.out.println("\n--- PARKING SLOT STATUS ---");
+
+            for (ParkingSlot slot : slots) {
+
+                if (slot.isAvailable()) {
+                    System.out.println("Slot " +
+                            slot.getSlotNumber() + " : Available");
+                } else {
+                    System.out.println("Slot " +
+                            slot.getSlotNumber() +
+                            " : Occupied by " +
+                            slot.getVehicle().getVehicleNumber());
+                }
+            }
+
+            System.out.println("Available Slots: " +
+                    getAvailableCount());
+
+            System.out.println("Waiting Vehicles: " +
+                    waitingQueue.size());
+        }
+
+        private int getAvailableCount() {
+
+            int count = 0;
+
+            for (ParkingSlot slot : slots) {
+                if (slot.isAvailable()) {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        // Display parking records
+        public void displayRecords() {
+
+            System.out.println("\n--- PARKING RECORDS ---");
+
+            try (BufferedReader reader =
+                    new BufferedReader(
+                    new FileReader(FILE_NAME))) {
+
+                String line;
+                boolean found = false;
+
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    found = true;
+                }
+
+                if (!found) {
+                    System.out.println("No records available.");
+                }
+
+            } catch (FileNotFoundException e) {
+                System.out.println("No parking records found yet.");
+            } catch (IOException e) {
+                System.out.println("Error reading records.");
+            }
+        }
+    }
+
+    // Read integer input safely
+    static int readInt(Scanner sc, String message) {
+
+        while (true) {
+            try {
+                System.out.print(message);
+                return Integer.parseInt(sc.nextLine().trim());
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Enter a number.");
+            }
+        }
+    }
+
+    // Main Method
+    public static void main(String[] args) {
+
+        Scanner sc = new Scanner(System.in);
+        ParkingSystem parking = new ParkingSystem();
+
+        int choice;
+
+        do {
+            System.out.println("\n================================");
+            System.out.println(" SMART PARKING MANAGEMENT SYSTEM");
+            System.out.println("================================");
+            System.out.println("1. Vehicle Entry");
+            System.out.println("2. Vehicle Exit");
+            System.out.println("3. Display Parking Slots");
+            System.out.println("4. View Parking Records");
+            System.out.println("5. Exit");
+            System.out.println("================================");
+
+            choice = readInt(sc, "Enter your choice: ");
+
+            switch (choice) {
+
+                case 1:
+
+                    System.out.print("Enter Vehicle Number: ");
+                    String number = sc.nextLine().trim();
+
+                    if (number.isEmpty()) {
+                        System.out.println(
+                                "Vehicle number cannot be empty!");
+                        break;
+                    }
+
+                    System.out.println("1. Car");
+                    System.out.println("2. Bike");
+
+                    int type = readInt(sc, "Select Vehicle Type: ");
+
+                    Vehicle vehicle;
+
+                    if (type == 1) {
+                        vehicle = new Car(number);
+                    } else if (type == 2) {
+                        vehicle = new Bike(number);
+                    } else {
+                        System.out.println("Invalid vehicle type!");
+                        break;
+                    }
+
+                    parking.vehicleEntry(vehicle);
+                    break;
+
+                case 2:
+
+                    System.out.print("Enter Vehicle Number: ");
+                    String exitNumber = sc.nextLine().trim();
+
+                    parking.vehicleExit(exitNumber);
+                    break;
+
+                case 3:
+
+                    parking.displaySlots();
+                    break;
+
+                case 4:
+
+                    parking.displayRecords();
+                    break;
+
+                case 5:
+
+                    System.out.println(
+                            "Thank you for using Smart Parking System!");
+                    break;
+
+                default:
+
+                    System.out.println("Invalid choice! Try again.");
+            }
+
+        } while (choice != 5);
+
+        sc.close();
+    }
+}
